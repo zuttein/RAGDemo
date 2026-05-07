@@ -30,7 +30,7 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 db = chroma_setup()
 
 # UI
-st.title("Retrieval Demo")
+st.title("RAG Demo")
 
 # UI
 query = st.text_input("Ställ en fråga")
@@ -38,6 +38,7 @@ query = st.text_input("Ställ en fråga")
 # Retrieval - R 
 #När användaren skriver något körs retrieval
 if query:
+ with st.spinner("Analyserar dokument..."):
     #Frågan blir embedding och jämförs med alla "dokument", räknar likheter och returnerar den bästa matchen
     results = db.similarity_search(query, k=4)
 
@@ -80,8 +81,9 @@ if query:
                             2. Om svaret inte finns i context svara då: "Efterfrågad information finns inte i dokumenten"
                             3. Hitta inte på information.
                             4. Svara tydligt och kort.
-                            5. Källhänvisa alltid till de dokument du svarar utifrån, visa då source_id och titel.
-                            6. Om frågan ej är relaterad till Stonebeach svara : "Jag svarar enbart på frågor gällande StoneBeach"
+                            5. Skriv aldrig källor inne i själva svaret.
+                            6. Håll svaret naturligt och lättläst.
+                            7. Om frågan ej är relaterad till Stonebeach svara : "Jag svarar enbart på frågor gällande StoneBeach"
                             """
             },
             { 
@@ -93,8 +95,23 @@ if query:
     )
 
     answer = response.choices[0].message.content
-    st.write(answer)
 
+    with st.chat_message("user"):
+     st.write(query)
+    with st.chat_message("assistant"):
+     st.write(answer)
+
+     st.subheader("Källor")
+
+    for doc in results:
+     st.markdown(
+        f"""
+        📄 **{doc.metadata.get("title")}**  
+        ID: `{doc.metadata.get("source_id")}`  
+        Kategori: {doc.metadata.get("category")}
+        """
+    )
+   
 
 
 
