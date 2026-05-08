@@ -40,7 +40,33 @@ query = st.text_input("Ställ en fråga")
 if query:
  with st.spinner("Analyserar dokument..."):
     #Frågan blir embedding och jämförs med alla "dokument", räknar likheter och returnerar den bästa matchen
-    results = db.similarity_search(query, k=4)
+    # Hämtar de 4 mest relevanta dokumenten + deras similarity score
+    results = db.similarity_search_with_score(query, k=4)
+
+    # Lista för dokument som faktiskt är relevanta
+    relevant_results = []
+
+    # Loopar igenom alla träffar
+    for doc, score in results:
+
+      # Debug - visar score i terminalen
+      print(f"Score: {score}")
+      
+      # Lägre score = bättre match
+      # Filtrerar bort irrelevanta träffar
+      if score < 1.2:
+        relevant_results.append(doc)
+
+    # Begränsar till max 2 dokument för mindre brus
+    relevant_results = relevant_results[:2]
+
+    # Om inga relevanta dokument hittas
+    if not relevant_results:
+     st.write("Efterfrågad information finns inte i dokumenten")
+     st.stop()
+
+    
+    
 
     #  Context - A 
 
@@ -56,7 +82,7 @@ if query:
             Text: {doc.page_content}
             
         """
-        for doc in results
+        for doc in relevant_results
     ])
 
     #  LLM - G 
@@ -103,7 +129,7 @@ if query:
 
      st.subheader("Källor")
 
-    for doc in results:
+    for doc in relevant_results:
      st.markdown(
         f"""
         📄 **{doc.metadata.get("title")}**  
