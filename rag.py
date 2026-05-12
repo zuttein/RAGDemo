@@ -49,7 +49,7 @@ def rag_pipeline(client, db, query):
 
         print(f"Score: {score}")
 
-        if score < 1.2:
+        if score < 0.9:
             relevant_results.append(doc)
 
     # Begränsa antal dokument
