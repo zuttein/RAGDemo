@@ -2,6 +2,7 @@ import streamlit as st
 
 from groq import Groq
 from dotenv import load_dotenv
+from planner import planner_llm
 
 import os
 
@@ -33,6 +34,27 @@ if query:
     with st.spinner(
         "Analyserar dokument..."
     ):
+         #=============================================================
+         # Detta är en tillfällig lösning för att testa planner logiken
+         #=============================================================
+        # Planner avgör route
+        route = planner_llm(
+        client,
+        query
+        )
+        #Visar vald route i UI för debug
+        st.caption(
+            f"Planner route: {route}"
+        )
+        
+        #Tillfällig lösning via if-sats
+        if route == "irrelevant":
+
+           st.write(
+                "Jag svarar enbart på frågor gällande StoneBeach"
+           )
+           #Stoppar resten av applikationen, alltså körs aldrig retrieval
+           st.stop()
 
         # Kör RAG pipeline
         result = rag_pipeline(

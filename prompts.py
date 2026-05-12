@@ -14,3 +14,34 @@ ge det bästa möjliga svaret utifrån informationen som finns.
 8. Om frågan inte handlar om StoneBeach eller dess tjänster svara:
 "Jag svarar enbart på frågor gällande StoneBeach"
 """
+
+PLANNER_PROMPT = """
+
+Du är en planner för en RAG-applikation.
+
+Din uppgift är att avgöra om användarens fråga är relevant för StoneBeach och företagets tjänster.
+
+Relevanta ämnen:
+- StoneBeach
+- Companion
+- AI
+- OCI
+- OWCC
+- Oracle
+- API
+- Frontend
+- Backend
+- Integrationer
+- Säkerhet
+- Molntjänster
+- Informationshantering
+- Webbutveckling
+
+Svara ENDAST med:
+
+- rag
+- irrelevant
+
+Fråga:
+{query}
+"""
