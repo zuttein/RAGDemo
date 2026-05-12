@@ -1,142 +1,97 @@
 import streamlit as st
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from groq import Groq
 from dotenv import load_dotenv
+from planner import planner_llm
+
 import os
-from text import texts, metadatas
 
-@st.cache_resource # Spara db i cache
-def chroma_setup():
-    # Skapar en text-splitter
-    splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=80)
-    
-    #Omvandlar text till dokument object (Varje text blir ett dokument)
-    docs = splitter.create_documents(texts=texts, metadatas=metadatas)
-    #st.write("Antal dokument:", len(docs))
-    
-    # Skapar en embedding-modell gör om mina dokument till vektorer
-    embeddings = HuggingFaceEmbeddings()
+from rag import (
+    chroma_setup,
+    rag_pipeline
+)
 
-    return Chroma.from_documents(docs, embeddings)
-
+# Ladda env
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Groq client
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
-# Alla "dokument" blir till embeddings och sparas
+# Chroma DB
 db = chroma_setup()
 
 # UI
 st.title("RAG Demo")
 
-# UI
-query = st.text_input("Ställ en fråga")
+query = st.text_input(
+    "Ställ en fråga"
+)
 
-# Retrieval - R 
-#När användaren skriver något körs retrieval
 if query:
- with st.spinner("Analyserar dokument..."):
-    #Frågan blir embedding och jämförs med alla "dokument", räknar likheter och returnerar den bästa matchen
-    # Hämtar de 4 mest relevanta dokumenten + deras similarity score
-    results = db.similarity_search_with_score(query, k=4)
 
-    # Lista för dokument som faktiskt är relevanta
-    relevant_results = []
+    with st.spinner(
+        "Analyserar dokument..."
+    ):
+         #=============================================================
+         # Detta är en tillfällig lösning för att testa planner logiken
+         #=============================================================
+        # Planner avgör route
+        route = planner_llm(
+        client,
+        query
+        )
+        #Visar vald route i UI för debug
+        st.caption(
+            f"Planner route: {route}"
+        )
+        
+        #Tillfällig lösning via if-sats
+        if route == "irrelevant":
 
-    # Loopar igenom alla träffar
-    for doc, score in results:
+           st.write(
+                "Jag svarar enbart på frågor gällande StoneBeach"
+           )
+           #Stoppar resten av applikationen, alltså körs aldrig retrieval
+           st.stop()
 
-      # Debug - visar score i terminalen
-      print(f"Score: {score}")
-      
-      # Lägre score = bättre match
-      # Filtrerar bort irrelevanta träffar
-      if score < 1.2:
-        relevant_results.append(doc)
+        # Kör RAG pipeline
+        result = rag_pipeline(
+            client,
+            db,
+            query
+        )
 
-    # Begränsar till max 2 dokument för mindre brus
-    relevant_results = relevant_results[:2]
+        # User message
+        with st.chat_message("user"):
+            st.write(query)
 
-    # Om inga relevanta dokument hittas
-    if not relevant_results:
-     st.write("Efterfrågad information finns inte i dokumenten")
-     st.stop()
+        # Assistant message
+        with st.chat_message("assistant"):
 
-    
-    
+            st.write(
+                result["answer"]
+            )
 
-    #  Context - A 
+            # Visa källor
+            if result["sources"]:
 
-    # Sätt ihop alla dokument till en text som ska till AI
-    #context = "\n\n".join([doc.page_content for doc in results ])
-    context = "\n\n".join([
-        f"""
-            Källa: {doc.metadata.get("source_id")}
-            Titel: {doc.metadata.get("title")}
-            Kategori: {doc.metadata.get("category")}
-            Ämne: {doc.metadata.get("topic")}
+                st.subheader("Källor")
 
-            Text: {doc.page_content}
-            
-        """
-        for doc in relevant_results
-    ])
+                for doc in result["sources"]:
 
-    #  LLM - G 
+                    st.markdown(
+                        f"""
+                        📄 **{doc.metadata.get("title")}**
 
-    prompt = f"""
-        Context: {context}
+                        ID:
+                        `{doc.metadata.get("source_id")}`
 
-        Fråga: {query}
-
-        Ge ditt svar:
-    """
-
-    response = client.chat.completions.create( # Skapa en klient från Groq. Specifiera modell och instruktioner till AI samt prompt
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": """
-                            Du är en RAG-assistent.
-                            Regler:
-                            1. Svara enbart baserat på informationen i context.
-                            2. Om svaret inte finns i context svara då: "Efterfrågad information finns inte i dokumenten"
-                            3. Hitta inte på information.
-                            4. Svara tydligt och kort.
-                            5. Skriv aldrig källor inne i själva svaret.
-                            6. Håll svaret naturligt och lättläst.
-                            7. Om frågan ej är relaterad till Stonebeach svara : "Jag svarar enbart på frågor gällande StoneBeach"
-                            """
-            },
-            { 
-                "role": "user",
-                "content": prompt
-            }
-            ],
-            temperature=0.3
-    )
-
-    answer = response.choices[0].message.content
-
-    with st.chat_message("user"):
-     st.write(query)
-    with st.chat_message("assistant"):
-     st.write(answer)
-
-     st.subheader("Källor")
-
-    for doc in relevant_results:
-     st.markdown(
-        f"""
-        📄 **{doc.metadata.get("title")}**  
-        ID: `{doc.metadata.get("source_id")}`  
-        Kategori: {doc.metadata.get("category")}
-        """
-    )
+                        Kategori:
+                        {doc.metadata.get("category")}
+                        """
+                    )
    
 
 
