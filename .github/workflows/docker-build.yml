@@ -1,0 +1,20 @@
+name: Docker Build
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+
+  build:
+    
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker container
+        run: docker build -t ragdemo .
