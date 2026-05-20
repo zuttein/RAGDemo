@@ -1,23 +1,32 @@
-# Retrieval-demo (RAG – R)
+# RAG Demo
 
-Detta är en enkel demo av **retrieval-steget** i ett RAG-system (Retrieval-Augmented Generation).
+Detta är en enkel demo av ett **RAG-system** (Retrieval-Augmented Generation) byggt med:
 
-## Vad den gör
+- Streamlit
+- LangGraph
+- ChromaDB
+- HuggingFace Embeddings
+- Groq LLM
 
-Applikationen visar hur man kan:
-- omvandla text till embeddings (vektorer)
-- lagra dessa i en vector-databas
-- ställa en fråga
-- hämta det mest relevanta dokumentet baserat på semantisk likhet
+## Vad applikationen gör
+
+Applikationen kan:
+
+- omvandla dokument till embeddings
+- lagra embeddings i en vector-databas
+- göra semantisk sökning
+- använda hybrid retrieval
+- generera svar baserat på relevanta dokument
+- route:a irrelevanta frågor med LangGraph
 
 ## Hur det fungerar
 
-1. Dokument (dummydata) omvandlas till embeddings
-2. Embeddings lagras i en vector-databas (Chroma)
-3. Användaren ställer en fråga
-4. Frågan omvandlas också till en embedding
-5. Systemet jämför frågan med dokumenten och returnerar det mest relevanta
-
+1. Dokument delas upp i chunks
+2. Chunks omvandlas till embeddings
+3. Embeddings lagras i ChromaDB
+4. Användaren ställer en fråga
+5. Systemet hämtar relevanta dokument
+6. LLM genererar ett svar baserat på context
 
 ## Kör lokalt
 
@@ -25,3 +34,5 @@ Installera beroenden:
 
 ```bash
 pip install -r requirements.txt
+
+streamlit run app.py
