@@ -66,7 +66,7 @@ def rag_pipeline(client, db, query):
         Title: {doc.metadata.get("title")}
         """)
 
-        if score < 0.9:
+        if score < 1.2:
 
             relevant_results.append(doc)
 
