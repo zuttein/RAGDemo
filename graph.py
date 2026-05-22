@@ -68,7 +68,7 @@ def build_graph(client, db):
         }
     )
 
-    graph.add_edge("rag", END)
+    graph.add_edge("rag", END) #test
     graph.add_edge("irrelevant", END)
 
     return graph.compile()
