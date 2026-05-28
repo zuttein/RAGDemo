@@ -4,12 +4,16 @@ from langgraph.graph import StateGraph, START, END
 
 from planner import planner_llm
 from rag import rag_pipeline
+from mcp_tools import scrape_website
+from rag import ingest
 
 class State(TypedDict): # Skapa state som skickas mellan noder
     query: str
     route: str
     answer: str
     sources: List[Any]
+    
+    url: str
 
 def planner_node(state: State, client):
     query = state["query"]
@@ -45,6 +49,18 @@ def rag_node(state: State, client, db):
         "answer": result["answer"],
         "sources": result["sources"]
     }
+    
+def scrape_node(state: State, db):
+    
+    url = state["url"]
+
+    website_text = scrape_website(url)
+    
+    ingest(db=db,
+           text=website_text,
+           source=url
+           )
+    return {}
 
 def build_graph(client, db):
     graph = StateGraph(State)
@@ -71,4 +87,16 @@ def build_graph(client, db):
     graph.add_edge("rag", END)
     graph.add_edge("irrelevant", END)
 
+    return graph.compile()
+
+def build_ingestion_graph(db):
+    
+    graph = StateGraph(State)
+    
+    graph.add_node(
+        "scrape",
+        lambda state: scrape_node(state, db)
+    )
+    graph.add_edge(START, "scrape")
+    graph.add_edge("scrape", END)
     return graph.compile()

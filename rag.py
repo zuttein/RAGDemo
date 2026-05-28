@@ -229,3 +229,23 @@ def rag_pipeline(client, db, query):
         "answer": answer,
         "sources": relevant_results
     }
+    
+def ingest(db, text, source):
+        
+    splitter = CharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=80
+    )
+    docs = splitter.create_documents(
+        texts = [text],
+            
+        metadatas = [
+             {
+                "title": source,
+                "category": "website",
+                "topic": "scraped",
+                "source_id": source
+            }
+        ]
+    )
+    db.add_documents(docs)

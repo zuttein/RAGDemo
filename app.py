@@ -2,8 +2,10 @@ import streamlit as st
 
 from groq import Groq
 from dotenv import load_dotenv
-from planner import planner_llm
-from graph import build_graph
+from graph import (
+    build_graph,
+    build_ingestion_graph
+)
 
 import os
 
@@ -25,12 +27,31 @@ db = chroma_setup()
 # Initialisera graph
 rag_graph = build_graph(client, db)
 
+ingestion_graph = build_ingestion_graph(db)
+
 # UI
 st.title("RAG Demo")
+
+st.subheader("Index Website")
+
+url = st.text_input("Website URL")
+
+if st.button("Scrape Website"):
+
+    with st.spinner("Scraping website..."):
+
+        ingestion_graph.invoke({
+            "url": url
+        })
+
+    st.success("Website indexed!")
 
 query = st.text_input(
     "Ställ en fråga"
 )
+all_docs = db.get()
+
+print(all_docs)
 
 if query:
 
