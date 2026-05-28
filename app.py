@@ -45,13 +45,17 @@ if st.button("Scrape Website"):
         })
 
     st.success("Website indexed!")
+    
+if st.button("Show DB"):
+
+    all_docs = db.get()
+
+    st.write(all_docs)
 
 query = st.text_input(
     "Ställ en fråga"
 )
-all_docs = db.get()
 
-print(all_docs)
 
 if query:
 

@@ -3,3 +3,5 @@ __pycache__/
 temp_db/
 .vscode/
 .env
+console*
+page*

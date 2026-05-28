@@ -1,18 +1,14 @@
 import os
 
-import requests
+import asyncio
 
-from bs4 import BeautifulSoup
+from mcp_client import scrape_with_mcp
+
 
 def scrape_website(url):
 
-    response = requests.get(url)
-
-    soup = BeautifulSoup(
-        response.text,
-        "html.parser"
+    result = asyncio.run(
+        scrape_with_mcp(url)
     )
 
-    text = soup.get_text()
-
-    return text
+    return result

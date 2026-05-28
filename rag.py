@@ -7,34 +7,41 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
 from prompts import RAG_SYSTEM_PROMPT
-from text import texts, metadatas
+#from text import texts, metadatas
 
 
 # -------------------------
 # Cache:a vector database
 # -------------------------
 
+# @st.cache_resource
+# def chroma_setup():
+#
+#     splitter = CharacterTextSplitter(
+#         chunk_size=500,
+#         chunk_overlap=80
+#     )
+#
+#     docs = splitter.create_documents(
+#         texts=texts,
+#         metadatas=metadatas
+#     )
+#
+#     embeddings = HuggingFaceEmbeddings()
+#
+#     db = Chroma.from_documents(
+#         docs,
+#         embeddings
+#     )
+#
+#     return db
 @st.cache_resource
 def chroma_setup():
 
-    splitter = CharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=80
-    )
-
-    # Skapar dokument
-    docs = splitter.create_documents(
-        texts=texts,
-        metadatas=metadatas
-    )
-
-    # Embedding-modell
     embeddings = HuggingFaceEmbeddings()
 
-    # Skapar Chroma vector DB
-    db = Chroma.from_documents(
-        docs,
-        embeddings
+    db = Chroma(
+        embedding_function=embeddings
     )
 
     return db
@@ -90,8 +97,7 @@ def rag_pipeline(client, db, query):
     "jag",
     "om",
     "för",
-    "att",
-    "stonebeach"
+    "att"
     }
 
     query_words = [
@@ -204,6 +210,9 @@ def rag_pipeline(client, db, query):
     # -------------------------
     # LLM generation
     # -------------------------
+    
+    print("\nCONTEXT SENT TO LLM:\n")
+    print(context[:2000])
 
     response = client.chat.completions.create(
 
@@ -248,4 +257,6 @@ def ingest(db, text, source):
             }
         ]
     )
+    
     db.add_documents(docs)
+    print(f"Added {len(docs)} chunks")
