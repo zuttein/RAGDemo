@@ -1,0 +1,13 @@
+services:
+
+  ragdemo:
+    build: .
+
+    ports:
+      - "8501:8501"
+
+    volumes:
+     - .:/app
+    
+    environment:
+      - STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
