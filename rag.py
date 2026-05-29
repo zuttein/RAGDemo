@@ -70,88 +70,96 @@ def rag_pipeline(client, db, query):
         print(f"""
         VECTOR MATCH
         Score: {score}
-        Title: {doc.metadata.get("title")}
+        Content:
+        {doc.page_content[:500]}
         """)
 
         if score < 1.2:
 
             relevant_results.append(doc)
 
+# Keyword search borttagen tills vidare.
+# Skrev över relevanta vector-träffar och gav sämre resultat.
+
     # -------------------------
     # HYBRID / KEYWORD SEARCH
     # -------------------------
 
-    query_words = re.findall(
-     r"\w+",
-      query.lower()
-    )
+    # uery_words = re.findall(
+    #  r"\w+",
+    #   query.lower()
+    # )
 
-    # Filtrering av vanliga ord
-    stopwords = {
-    "hur",
-    "vad",
-    "är",
-    "med",
-    "och",
-    "kan",
-    "jag",
-    "om",
-    "för",
-    "att"
-    }
+    # # Filtrering av vanliga ord
+    # stopwords = {
+    # "hur",
+    # "vad",
+    # "är",
+    # "med",
+    # "och",
+    # "kan",
+    # "jag",
+    # "om",
+    # "för",
+    # "att"
+    # }
 
-    query_words = [
-    word
-    for word in query_words
-    if word not in stopwords
-    ]
+    # query_words = [
+    # word
+    # for word in query_words
+    # if word not in stopwords
+    # ]
 
-    all_docs = db.get()
+    # all_docs = db.get()
 
-    for i, text in enumerate(all_docs["documents"]):
+    # for i, text in enumerate(all_docs["documents"]):
 
-        metadata = all_docs["metadatas"][i]
+    #     metadata = all_docs["metadatas"][i]
 
-        searchable_text = f"""
-        {text}
-        {metadata.get("title", "")}
-        {metadata.get("category", "")}
-        {metadata.get("topic", "")}
-        """.lower()
+    #     searchable_text = f"""
+    #     {text}
+    #     {metadata.get("title", "")}
+    #     {metadata.get("category", "")}
+    #     {metadata.get("topic", "")}
+    #     """.lower()
 
-        # Keyword match
-        if any(
-            word in searchable_text
-            for word in query_words
-        ):
+    #     # Keyword match
+    #     if any(
+    #         word in searchable_text
+    #         for word in query_words
+    #     ):
 
-            print(f"""
-            KEYWORD MATCH
-            Title: {metadata.get("title")}
-            """)
+    #         print(f"""
+    #         KEYWORD MATCH
+    #         Title: {metadata.get("title")}
+    #         """)
 
-            already_exists = False
+    #         already_exists = False
 
-            for existing_doc in relevant_results:
+    #         for existing_doc in relevant_results:
+    #             existing_key = (
+    #                 existing_doc.metadata.get("chunk_id")
+    #                 or existing_doc.metadata.get("source_id")
+    #             )
+    #             keyword_key = (
+    #                 metadata.get("chunk_id")
+    #                 or metadata.get("source_id")
+    #             )
 
-                if (
-                    existing_doc.metadata.get("source_id")
-                    ==
-                    metadata.get("source_id")
-                ):
+    #             if existing_key == keyword_key:
 
-                    already_exists = True
-                    break
+    #                 already_exists = True
+    #                 break
 
-            # Lägg till om dokumentet inte redan finns
-            if not already_exists:
+    #         # Lägg till om dokumentet inte redan finns
+    #         if not already_exists:
 
-                keyword_doc = Document(
-                    page_content=text,
-                    metadata=metadata
-                )
+    #             keyword_doc = Document(
+    #                 page_content=text,
+    #                 metadata=metadata
+    #             )
 
-                relevant_results.insert(0, keyword_doc)
+    #             relevant_results.insert(0, keyword_doc)
 
     # -------------------------
     # Begränsa antal dokument
@@ -246,18 +254,23 @@ def ingest(db, text, source):
         chunk_overlap=80
     )
     print(text[:500])
-    docs = splitter.create_documents(
-        texts = [text],
-            
-        metadatas = [
-             {
+    chunks = splitter.split_text(text)
+
+    docs = [
+        Document(
+            page_content=chunk,
+            metadata={
                 "title": source,
                 "category": "website",
                 "topic": "scraped",
-                "source_id": source
+                "source_id": source,
+                "source_url": source,
+                "chunk_index": i,
+                "chunk_id": f"{source}#chunk-{i}",
             }
-        ]
-    )
+        )
+        for i, chunk in enumerate(chunks)
+    ]
     print(f"\nTEXT LENGTH: {len(text)}")
     print(f"ADDED {len(docs)} CHUNKS\n")
 

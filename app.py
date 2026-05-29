@@ -108,7 +108,19 @@ if query:
                         {doc.metadata.get("category")}
                         """
                     )
-   
 
+                    chunk_index = doc.metadata.get("chunk_index")
+                    chunk_id = doc.metadata.get("chunk_id")
+                    preview = doc.page_content[:500]
+
+                    if chunk_index is not None:
+                        st.markdown(f"Chunk: `{chunk_index}`")
+
+                    if chunk_id:
+                        st.markdown(f"Chunk ID: `{chunk_id}`")
+
+                    with st.expander("Visa hämtad text"):
+                        st.write(preview)
+   
 
 
