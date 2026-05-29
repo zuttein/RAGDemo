@@ -10,12 +10,23 @@ def clean_text(text):
 
     text = re.sub(r"\[ref=.*?\]", "", text)
     text = re.sub(r"\[cursor=.*?\]", "", text)
+
     text = re.sub(r"- /url:.*", "", text)
     text = re.sub(r"- img.*", "", text)
 
+    # MCP-brus
+    text = re.sub(r"### Result", "", text)
+
+    text = re.sub(
+        r"### Ran Playwright code.*",
+        "",
+        text,
+        flags=re.DOTALL
+    )
+
     text = re.sub(r"\n{3,}", "\n\n", text)
 
-    return text
+    return text.strip()
 
 
 async def scrape_with_mcp(url):
@@ -45,10 +56,12 @@ async def scrape_with_mcp(url):
             print(f"\nNAVIGATED TO: {url}\n")
 
             snapshot = await session.call_tool(
-                "browser_snapshot",
-                {}
+                "browser_evaluate",
+                {
+                    "function": "() => document.body.innerText"
+                }
             )
-            print("\nSNAPSHOT RECEIVED\n")
+            print(snapshot)
             
             raw_text = snapshot.content[0].text
             
