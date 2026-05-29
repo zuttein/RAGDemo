@@ -1,7 +1,7 @@
 import re
 import streamlit as st
 
-from langchain_text_splitters import CharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
@@ -241,10 +241,11 @@ def rag_pipeline(client, db, query):
     
 def ingest(db, text, source):
         
-    splitter = CharacterTextSplitter(
+    splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
         chunk_overlap=80
     )
+    print(text[:500])
     docs = splitter.create_documents(
         texts = [text],
             
@@ -257,6 +258,10 @@ def ingest(db, text, source):
             }
         ]
     )
+    print(f"\nTEXT LENGTH: {len(text)}")
+    print(f"ADDED {len(docs)} CHUNKS\n")
+
+    for i, doc in enumerate(docs):
+        print(f"Chunk {i}: {len(doc.page_content)} chars")
     
     db.add_documents(docs)
-    print(f"Added {len(docs)} chunks")
