@@ -51,6 +51,14 @@ if st.button("Show DB"):
     all_docs = db.get()
 
     st.write(all_docs)
+    
+if st.button("Clear database"):
+
+    all_docs = db.get()
+
+    if all_docs["ids"]:
+        db.delete(ids=all_docs["ids"])
+   
 
 query = st.text_input(
     "Ställ en fråga"
