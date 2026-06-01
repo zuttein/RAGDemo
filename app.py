@@ -1,6 +1,7 @@
 import streamlit as st
 
 from groq import Groq
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 from graph import (
     build_graph,
@@ -13,12 +14,51 @@ from rag import (
     chroma_setup,
 )
 
+import asyncio
+
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+from graph_mcp import build_graph as build_mcp_graph
+
+from langchain_core.messages import HumanMessage
+
+
+async def get_tools():
+
+    client = MultiServerMCPClient(
+        {
+            "playwright": {
+                "transport": "stdio",
+                "command": "npx",
+                "args": ["@playwright/mcp"]
+            }
+        }
+    )
+
+    return await client.get_tools()
+
+
+tools = asyncio.run(
+    get_tools()
+)
+
 # Ladda env
 load_dotenv()
 
 # Groq client
 client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
+)
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    api_key=os.getenv("GROQ_API_KEY")
+)
+
+llm_with_tools = llm.bind_tools(tools)
+
+mcp_graph = build_mcp_graph(
+    llm_with_tools,
+    tools
 )
 
 # Chroma DB
@@ -36,6 +76,24 @@ st.subheader("Index Website")
 
 url = st.text_input("Website URL")
 
+
+
+if st.button("Test MCP Graph"):
+
+    result = asyncio.run(
+        mcp_graph.ainvoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content="Open https://stonebeach.se"
+                )
+            ]
+        }
+    ))
+
+    print(result)
+
+    st.write(result)
 if st.button("Scrape Website"):
 
     with st.spinner("Scraping website..."):
@@ -122,5 +180,6 @@ if query:
                     with st.expander("Visa hämtad text"):
                         st.write(preview)
    
+
 
 
