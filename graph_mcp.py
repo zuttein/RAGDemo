@@ -32,6 +32,8 @@ def planner(state, llm):
     )
 
     print(response)
+    print("\nTOOL CALLS:")
+    print(response.tool_calls)
 
     return {
         "messages": [response]
@@ -66,11 +68,11 @@ def build_graph(llm, allowed_tools):
             "__end__": END
         }
     )
-    print("TOOLS -> PLANNER EDGE CREATED")
 
+    # Avsluta efter tool-körningen så UI:t får tillbaka råresultatet direkt.
     graph.add_edge(
         "tools",
-        "planner"
+        END
     )
 
     return graph.compile()

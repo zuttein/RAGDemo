@@ -16,31 +16,12 @@ from rag import (
 
 import asyncio
 
-from langchain_mcp_adapters.client import MultiServerMCPClient
-
 from graph_mcp import build_graph as build_mcp_graph
 
 from langchain_core.messages import HumanMessage
 
+from scrape_tool import create_scrape_tool
 
-async def get_tools():
-
-    client = MultiServerMCPClient(
-        {
-            "playwright": {
-                "transport": "stdio",
-                "command": "npx",
-                "args": ["@playwright/mcp"]
-            }
-        }
-    )
-
-    return await client.get_tools()
-
-
-tools = asyncio.run(
-    get_tools()
-)
 
 # Ladda env
 load_dotenv()
@@ -53,6 +34,11 @@ llm = ChatGroq(
     model="llama-3.3-70b-versatile",
     api_key=os.getenv("GROQ_API_KEY")
 )
+
+scrape_tool = create_scrape_tool()
+
+# Exponera endast vår lokala scraper-tool för modellen i MCP-testflödet.
+tools = [scrape_tool]
 
 llm_with_tools = llm.bind_tools(tools)
 
@@ -80,20 +66,33 @@ url = st.text_input("Website URL")
 
 if st.button("Test MCP Graph"):
 
+    # Testa att modellen väljer scraper-toolen och att resultatet skickas tillbaka i grafen.
     result = asyncio.run(
         mcp_graph.ainvoke(
         {
             "messages": [
                 HumanMessage(
-                    content="Open https://stonebeach.se"
+                    content="Scrape https://stonebeach.se"
                 )
             ]
         }
     ))
 
+    print("\nRESULT:")
     print(result)
 
+    print("\nMESSAGES:")
+    for msg in result["messages"]:
+        print(type(msg))
+        print(msg)
+        print("----------------")
+    
+
+    print("\nFINAL RESULT:")
     st.write(result)
+    
+    
+    
 if st.button("Scrape Website"):
 
     with st.spinner("Scraping website..."):
@@ -180,6 +179,5 @@ if query:
                     with st.expander("Visa hämtad text"):
                         st.write(preview)
    
-
 
 

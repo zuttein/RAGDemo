@@ -5,3 +5,9 @@ temp_db/
 .env
 console*
 page*
+# Playwright/MCP output
+*.md
+*_result.txt
+
+# Snapshot-filer
+*snapshot*
