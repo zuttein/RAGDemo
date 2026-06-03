@@ -2,6 +2,9 @@ from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
 
+# Wrapper runt Playwright MCP-tools.
+# LLM:en ser endast scrape_website medan wrappern
+# hanterar de underliggande Playwright-anropen.
 
 def create_scrape_tool():
 
@@ -21,12 +24,14 @@ def create_scrape_tool():
                 }
             }
         )
-
+        
+        # Öppna en stateful MCP-session.
         async with client.session("playwright") as session:
-
+            
+            # Hämta Playwright-tools från den aktiva sessionen.
             tools = await load_mcp_tools(session)
 
-            # Plocka ut de två MCP-tools som behövs för en enkel sidläsning.
+            
             navigate_tool = next(
                 t for t in tools
                 if t.name == "browser_navigate"
@@ -36,11 +41,13 @@ def create_scrape_tool():
                 t for t in tools
                 if t.name == "browser_snapshot"
             )
-
+            
+            # Navigera till önskad webbsida
             nav_result = await navigate_tool.ainvoke({
                 "url": url
             })
-
+            
+            # Hämta innehåll från samma browser-session
             snapshot_result = await snapshot_tool.ainvoke({})
 
             return f"""

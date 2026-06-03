@@ -35,13 +35,16 @@ llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY")
 )
 
+# Skapa wrapper-toolen som exponeras för LLM:en
 scrape_tool = create_scrape_tool()
 
-# Exponera endast vår lokala scraper-tool för modellen i MCP-testflödet.
+# Lista över tools som får användas av plannern
 tools = [scrape_tool]
 
+# Gör det möjligt för LLM:en att välja tools via tool_calls
 llm_with_tools = llm.bind_tools(tools)
 
+# LangGraph-workflow för MCP/Playwright-testning
 mcp_graph = build_mcp_graph(
     llm_with_tools,
     tools
@@ -63,7 +66,8 @@ st.subheader("Index Website")
 url = st.text_input("Website URL")
 
 
-
+# Testflöde:
+# User -> Planner -> ToolNode -> scrape_website
 if st.button("Test MCP Graph"):
 
     # Testa att modellen väljer scraper-toolen och att resultatet skickas tillbaka i grafen.

@@ -11,14 +11,16 @@ from langgraph.prebuilt import (
 
 from langchain_core.messages import BaseMessage
 
-
+# Delat state för grafen
+# Messages byggs på automatiskt mellan noderna
 class State(TypedDict):
     messages: Annotated[
         list[BaseMessage],
         add_messages
     ]
 
-
+# Planner-noden använder LLM:en för att avgöra
+# om ett tool ska anropas eller om flödet ska avslutas
 def planner(state, llm):
 
     print("\n===================")
@@ -40,7 +42,9 @@ def planner(state, llm):
     }
 
 def build_graph(llm, allowed_tools):
-
+    
+    # Asvarar för att verkställa tools
+    # som LLM:en har valt.
     tool_node = ToolNode(allowed_tools)
 
     graph = StateGraph(State)
@@ -59,7 +63,8 @@ def build_graph(llm, allowed_tools):
         START,
         "planner"
     )
-
+    # Om LLM:en returnerar ett tool_call skickas
+    # flödet vidare till ToolNode, annars avslutas grafen
     graph.add_conditional_edges(
         "planner",
         tools_condition,
@@ -69,7 +74,8 @@ def build_graph(llm, allowed_tools):
         }
     )
 
-    # Avsluta efter tool-körningen så UI:t får tillbaka råresultatet direkt.
+    # Nuvarande implementation tillåter endast
+    # ett tool-anrop innan workflowet avslutas
     graph.add_edge(
         "tools",
         END
